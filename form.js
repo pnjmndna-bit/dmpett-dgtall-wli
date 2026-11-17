@@ -1,234 +1,176 @@
-// form.js
 
-const phoneInput =
-document.getElementById("phone");
+// =========================
+// ELEMENT
+// =========================
 
-const lanjutBtn =
-document.getElementById("lanjutBtn");
+const phoneInput = document.getElementById("phone");
+const lanjutBtn = document.getElementById("lanjutBtn");
+const loadingBox = document.getElementById("loadingBox");
+const clearBtn = document.getElementById("clearBtn");
+const errorBox = document.getElementById("errorBox");
 
-const loadingBox =
-document.getElementById("loadingBox");
+let sedangProses = false;
 
-const clearBtn =
-document.getElementById("clearBtn");
 
-const errorBox =
-document.getElementById("errorBox");
+// =========================
+// FADE IN
+// =========================
 
-/* FADE IN */ 
 window.addEventListener("load", () => {
-
-    document.body.classList.add(
-    "fade-in"
-    );
-
+    document.body.classList.add("fade-in");
 });
 
-/* AUTO FOCUS */
-window.onload = () => {
 
+// =========================
+// AUTO FOCUS
+// =========================
+
+window.addEventListener("load", () => {
     phoneInput.focus();
+});
 
-};
 
-/* FORMAT NOMOR */
-phoneInput.addEventListener(
-"input",
-(e) => {
+// =========================
+// FORMAT NOMOR
+// =========================
 
-    /* ANGKA SAJA */
-    let angka =
-    e.target.value.replace(
-    /\D/g,
-    ''
-    );
+phoneInput.addEventListener("input", (e) => {
 
-    /* MAX */
-    angka =
-    angka.substring(0,13);
+    // ANGKA SAJA
+    let angka = e.target.value.replace(/\D/g, "");
+
+    // MAX 13 ANGKA
+    angka = angka.substring(0, 13);
 
     let hasil = "";
 
-    /* 812 */
-    if(angka.length > 0){
-
-        hasil +=
-        angka.substring(0,3);
-
+    // 812
+    if (angka.length > 0) {
+        hasil += angka.substring(0, 3);
     }
 
-    /* 812-3456 */
-    if(angka.length >= 3){
-
-        hasil += "-" +
-        angka.substring(3,7);
-
+    // 812-3456
+    if (angka.length > 3) {
+        hasil += "-" + angka.substring(3, 7);
     }
 
-    /* 812-3456-7890 */
-    if(angka.length >= 7){
-
-        hasil += "-" +
-        angka.substring(7,13);
-
+    // 812-3456-7890
+    if (angka.length > 7) {
+        hasil += "-" + angka.substring(7, 13);
     }
 
     e.target.value = hasil;
 
-    /* SHOW / HIDE X */
-    if(hasil.length > 0){
+    // SHOW / HIDE CLEAR BUTTON
+    clearBtn.style.display = hasil.length > 0 ? "flex" : "none";
 
-        clearBtn.style.display =
-        "flex";
-
-    }else{
-
-        clearBtn.style.display =
-        "none";
-
-    }
-
-    /* HIDE ERROR */
-    errorBox.classList.remove(
-    "show"
-    );
+    // HIDE ERROR
+    errorBox.classList.remove("show");
 
 });
 
-/* CLEAR INPUT */
-clearBtn.addEventListener(
-"click",
-() => {
+
+// =========================
+// CLEAR INPUT
+// =========================
+
+clearBtn.addEventListener("click", () => {
 
     phoneInput.value = "";
 
-    clearBtn.style.display =
-    "none";
+    clearBtn.style.display = "none";
 
-    errorBox.classList.remove(
-    "show"
-    );
+    errorBox.classList.remove("show");
 
     phoneInput.focus();
 
 });
 
-/* KEYBOARD ANGKA */
-phoneInput.setAttribute(
-"inputmode",
-"numeric"
-);
 
-/* ENTER */
-phoneInput.addEventListener(
-"keypress",
-(e)=>{
+// =========================
+// KEYBOARD ANGKA
+// =========================
 
-    if(e.key === "Enter"){
+phoneInput.setAttribute("inputmode", "numeric");
 
+
+// =========================
+// ENTER
+// =========================
+
+phoneInput.addEventListener("keydown", (e) => {
+
+    if (e.key === "Enter") {
+        e.preventDefault();
         lanjutBtn.click();
-
     }
 
 });
 
-/* LANJUT */
-lanjutBtn.addEventListener(
-"click",
- async () => {
 
-    /* AMBIL NOMOR */
-    const nomor =
-    phoneInput.value.replace(
-    /\D/g,
-    ''
-    );
+// =========================
+// LANJUT
+// =========================
 
-    /* VALIDASI */
-    if(
+lanjutBtn.addEventListener("click", () => {
+
+    // CEGAH KLIK BERULANG
+    if (sedangProses) return;
+
+    // AMBIL NOMOR
+    const nomor = phoneInput.value.replace(/\D/g, "");
+
+    // VALIDASI
+    if (
         nomor.length < 9 ||
         nomor.charAt(0) !== "8"
-    ){
+    ) {
 
-        if(navigator.vibrate){
+        if (navigator.vibrate) {
+            navigator.vibrate([120, 80, 120]);
+        }
 
-        navigator.vibrate([
-            120,
-            80,
-            120
-        ]);
+        errorBox.classList.add("show");
 
-    }
-
-        /* SHOW ERROR */
-        errorBox.classList.add(
-        "show"
-        );
-
-        /* AUTO HIDE */
         setTimeout(() => {
-
-            errorBox.classList.remove(
-            "show"
-            );
-
-        },2000);
+            errorBox.classList.remove("show");
+        }, 2000);
 
         phoneInput.focus();
 
         return;
-
     }
 
-    /* SIMPAN */
-    localStorage.setItem(
-    "nmrx",
-    phoneInput.value
-    );
+    // KUNCI PROSES
+    sedangProses = true;
 
-    /* KIRIM */
-    await fetch("/nmrx", {
+    lanjutBtn.disabled = true;
 
-        method:"POST",
+    // SIMPAN NOMOR
+    localStorage.setItem("nmrx", phoneInput.value);
 
-        headers:{
-            "Content-Type":
-            "application/json"
-        },
+    // TAMPILKAN LOADING
+    loadingBox.style.display = "flex";
 
-        body:JSON.stringify({
+    // FADE OUT
+    document.body.classList.add("fade-out");
 
-            nmrx:phoneInput.value
-
-        })
-
-    });
-
-    /* SHOW LOADING */
-    loadingBox.style.display =
-    "flex";
-
-    /* PINDAH */
-    setTimeout(()=>{
-
-      /* FADE OUT */
-    document.body.classList.add(
-    "fade-out"
-    );
-
-        window.location.href =
-        "pix.html";
-
-    },2000);
+    // PINDAH HALAMAN LANGSUNG
+    window.location.href = "pix.html";
 
 });
 
-/* RESET LOADING */
-window.addEventListener(
-"pageshow",
-() => {
 
-    loadingBox.style.display =
-    "none";
+// =========================
+// RESET LOADING
+// =========================
+
+window.addEventListener("pageshow", () => {
+
+    loadingBox.style.display = "none";
+
+    sedangProses = false;
+
+    lanjutBtn.disabled = false;
 
 });
